@@ -47,7 +47,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-#include <SDL/SDL.h>
+#include <SDL2/SDL.h>
 
 #include "ndofdev_external.h"
 
