@@ -43,8 +43,12 @@ case "$AUTOBUILD_PLATFORM" in
         # open-libndofdev repository and remove "open-" as a suggestion.
         echo "Windows/Mac libndofdev is in a separate bitbucket repository \
 -- try $(hg paths default | sed -E 's/open-(libndofdev)/\1/')" 1>&2 ; exit 1
-    ;;
-    linux*)
+		;;
+	linux)
+		echo "Platform linux is unsupported"
+		exit 1
+		;;
+    linux64)
         opts="-DTARGET_OS_LINUX -m$AUTOBUILD_ADDRSIZE $LL_BUILD_RELEASE"
         cmake ../libndofdev -DCMAKE_CXX_FLAGS="$opts" -DCMAKE_C_FLAGS="$opts" \
             -DCMAKE_OSX_ARCHITECTURES="$AUTOBUILD_CONFIGURE_ARCH" \

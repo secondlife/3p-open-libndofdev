@@ -23,7 +23,7 @@ if (${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 
     set(libndofdev_HEADER_FILES
     	${CMAKE_CURRENT_SOURCE_DIR}/include/ndofdev_external.h
-    	${CMAKE_CURRENT_SOURCE_DIR}/../stage/packages/include/SDL/SDL.h
+    	${CMAKE_CURRENT_SOURCE_DIR}/../stage/packages/include/SDL2/SDL.h
     )
     
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Windows")
