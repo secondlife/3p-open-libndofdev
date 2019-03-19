@@ -34,7 +34,7 @@
     * Evdev could be used for joysticks as well, but higher level logic would have to be
     * re-implemented (calibration, filtering, etc.) - SDL includes it already.
     *
-    * Release 0.3
+    * Release 0.9
 */
 
 #include <linux/input.h>
@@ -52,7 +52,7 @@
 #include "ndofdev_external.h"
 
 // Hack - we need to store the descriptor
-// of the SpaceNavigator in order to be able to 
+// of the SpaceNavigator in order to be able to
 // turn its LED off in the ndof_cleanup() function :(
 static int spacenav_fd = -1;
 
@@ -79,6 +79,10 @@ NDOF_Device *ndof_create()
     return d;
 }
 
+#define test_bit(nr, addr) \
+     (((1UL << ((nr) % (sizeof(long) * 8))) & ((addr)[(nr) / (sizeof(long) * 8)])) != 0)
+#define NBITS(x) ((((x)-1)/(sizeof(long) * 8))+1)
+
 int ndof_init_first(NDOF_Device *in_out_dev, void *param)
 {
     // try to find 3DConnexion SpaceNavigator first
@@ -95,12 +99,35 @@ int ndof_init_first(NDOF_Device *in_out_dev, void *param)
         if (fd > 0)
         {
             ioctl(fd, EVIOCGID, &ID);        // get device ID
-            if ((ID.vendor == 0x046d) &&
-                    ((ID.product == 0xc626) || // SpaceNavigators
-                     (ID.product == 0xc623) || // SpaceTraveler (untested)
-                     (ID.product == 0xc603)))  // SpaceMouse (untested)
+            if (                             // For a nice list see http://spacemice.org/index.php?title=Dev
+                ((ID.vendor == 0x046d) &&    // Logitech's Vendor ID, used by 3DConnexion until they got their own.
+                    (
+                        (ID.product == 0xc603) || // SpaceMouse (untested)
+                        (ID.product == 0xc605) || // CADMan (untested)
+                        (ID.product == 0xc606) || // SpaceMouse Classic (untested)
+                        (ID.product == 0xc621) || // SpaceBall 5000
+                        (ID.product == 0xc623) || // SpaceTraveler (untested)
+                        (ID.product == 0xc625) || // SpacePilot (untested)
+                        (ID.product == 0xc626) || // SpaceNavigators
+                        (ID.product == 0xc627) || // SpaceExplorer (untested)
+                        (ID.product == 0xc628) || // SpaceNavigator for Notebooks (untested)
+                        (ID.product == 0xc629) || // SpacePilot Pro (untested)
+                        (ID.product == 0xc62b) || // SpaceMousePro
+                        0
+                    )
+                ) ||
+                ((ID.vendor == 0x256F) &&    // 3Dconnexion's Vendor ID
+                    (
+                        (ID.product == 0xc62E) || // SpaceMouse Wireless (cable) (untested)
+                        (ID.product == 0xc62F) || // SpaceMouse Wireless (receiver) (untested)
+                        (ID.product == 0xc631) || // Spacemouse Wireless (untested)
+                        (ID.product == 0xc632) || // SpacemousePro Wireless (untested)
+                        (ID.product == 0xc635) || // Spacemouse Compact (untested)
+                        0
+                    )
+                ))
             {
-                // printf("Using device: %s\n", fname);
+                printf("Using evdev device: %s\n", fname);
                 break;
             } else {
                 close(fd);
@@ -114,11 +141,74 @@ int ndof_init_first(NDOF_Device *in_out_dev, void *param)
         // We have SpaceNavigator, use it
         spacenav_fd = fd;
 
-        int N_AXES = 6; // FIXME: shouldn't be hardwired!
-        int N_BUTTONS = 2;
+        // default to sane values for these devices
+        unsigned int axes_count = 6;
+        unsigned int button_count = 32;
 
-        in_out_dev->axes_count = N_AXES;
-        in_out_dev->btn_count  = N_BUTTONS;
+        // Get the actual number of axes for this device.
+        int detected_axes_count = 0;
+
+        // first absolute axes
+        unsigned long absbit[NBITS(ABS_MAX)] = { 0 };
+        if (ioctl(fd, EVIOCGBIT(EV_ABS, sizeof(absbit)), absbit) >= 0)
+        {
+            for (i = 0; i < ABS_MISC; ++i)
+            {
+                /* Skip hats */
+                if (i == ABS_HAT0X)
+                {
+                    i = ABS_HAT3Y;
+                    continue;
+                }
+
+                if (test_bit(i, absbit))
+                    detected_axes_count++;
+            }
+        } else {
+            perror("Failed to obtain the number of absolute axes for device:\n");
+        }
+
+        // now relative axes
+        unsigned long relbit[NBITS(REL_MAX)] = { 0 };
+        if (ioctl(fd, EVIOCGBIT(EV_REL, sizeof(relbit)), relbit) >= 0)
+        {
+            for (i = 0; i < REL_MISC; ++i)
+            {
+                if (test_bit(i, relbit))
+                    detected_axes_count++;
+            }
+        } else {
+            perror("Failed to obtain the number of relative axes for device:\n");
+        }
+
+        if (detected_axes_count != 0)
+            axes_count = detected_axes_count;
+
+        // Get the actual number of buttons for this device.
+        int detected_button_count = 0;
+        unsigned long keybit[NBITS(KEY_MAX)] = { 0 };
+        if (ioctl(fd, EVIOCGBIT(EV_KEY, sizeof(keybit)), keybit) >= 0)
+        {
+            for (i = BTN_JOYSTICK; i < KEY_MAX; ++i)
+            {
+                if (test_bit(i, keybit))
+                    detected_button_count++;
+            }
+
+            for (i = BTN_MISC; i < BTN_JOYSTICK; ++i)
+            {
+                if (test_bit(i, keybit))
+                    detected_button_count++;
+            }
+
+            if (detected_button_count != 0)
+                button_count = detected_button_count;
+        } else {
+            perror("Failed to obtain the number of buttons for device:\n");
+        }
+
+        in_out_dev->axes_count = axes_count;
+        in_out_dev->btn_count  = button_count;
         in_out_dev->absolute   = 0;
         in_out_dev->valid      = 1;
         in_out_dev->axes_max   = 512;
@@ -128,8 +218,8 @@ int ndof_init_first(NDOF_Device *in_out_dev, void *param)
         // private data
         LinJoystickPrivate *priv = (LinJoystickPrivate *) malloc (sizeof(LinJoystickPrivate));
         priv->fd = fd;
-        priv->axes = (long int *) calloc(N_AXES, sizeof(long int));
-        priv->buttons = (long int *) calloc(N_BUTTONS, sizeof(long int));
+        priv->axes = (long int *) calloc(axes_count, sizeof(long int));
+        priv->buttons = (long int *) calloc(button_count, sizeof(long int));
         priv->USE_SDL = 0;
         priv->j = NULL;
         in_out_dev->private_data = priv;
@@ -140,7 +230,8 @@ int ndof_init_first(NDOF_Device *in_out_dev, void *param)
         led_ev.type = EV_LED;
         led_ev.code = LED_MISC;
         led_ev.value = 1;
-        write(spacenav_fd, &led_ev, sizeof(struct input_event));
+        if(write(spacenav_fd, &led_ev, sizeof(struct input_event)) < 0)
+            perror("Failed to write LED_ON command:\n");
 
         return 0;
 
@@ -183,7 +274,8 @@ void ndof_libcleanup()
         led_ev.type = EV_LED;
         led_ev.code = LED_MISC;
         led_ev.value = 0;
-        write(spacenav_fd, &led_ev, sizeof(struct input_event));
+        if(write(spacenav_fd, &led_ev, sizeof(struct input_event)) < 0)
+            perror("Failed to write LED_OFF command:\n");
     }
 
     // FIXME: needs to cleanup the memory
