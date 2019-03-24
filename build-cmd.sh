@@ -14,6 +14,8 @@ PROJECT="libndofdev"
 #         * 0.3 
 # Tease out just the version number from that line.
 VERSION="$(expr "$(sed -n 2p "$TOP/$PROJECT/CHANGELOG")" : ".* \([0-9]*\.[0-9]*\) *$")"
+VERSION=$(gawk 'END{print MAJOR"."MINOR} /NDOFDEV_MAJOR/{MAJOR=$3} /NDOFDEV_MINOR/{MINOR=$3}' ${TOP}/${PROJECT}/include/ndofdev_version.h)
+
 SOURCE_DIR="$PROJECT"
 
 if [ -z "$AUTOBUILD" ] ; then 
