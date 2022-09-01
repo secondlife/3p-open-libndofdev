@@ -22,16 +22,16 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>1d4819f2944d572667b6a009bfadd8e0</string>
+              <string>f332d752a72cb524eb5db8ee6fdba3da</string>
               <key>url</key>
-              <string>http://3p.firestormviewer.org/SDL-2.0.10-linux64-192791159.tar.bz2</string>
+              <string>http://3p.firestormviewer.org/SDL2-2.0.20-linux64_bionic-221151857.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
           </map>
         </map>
         <key>version</key>
-        <string>1.2.15</string>
+        <string>2.0.20</string>
       </map>
     </map>
     <key>package_description</key>
