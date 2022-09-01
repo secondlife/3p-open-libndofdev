@@ -24,3 +24,49 @@
 * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
+/*
+ * Basic sanity test that the library works and can actually read device data.
+ */
+
+#include <stdio.h>
+#include <unistd.h>
+
+#include "ndofdev_external.h"
+
+int main(int argc, char** argv)
+{
+    int i;
+    NDOF_Device *dev = NULL;
+
+    ndof_libinit(NULL, NULL, NULL);
+
+    dev = ndof_create();
+    if(ndof_init_first(dev, NULL) < 0)
+    {
+        perror("Unable to open any NDOF devices!");
+        return(-1);
+    }
+
+    puts("Detected:");
+    ndof_dump(stdout, dev);
+
+    puts("\nPress RETURN to start polling ...");
+    getchar();
+
+    // try to poll the device and get data
+    while(1)
+    {
+        ndof_update(dev);
+
+        printf("\nAxes: ");
+        for(i = 0; i < dev->axes_count; ++i)
+            printf("%ld ", dev->axes[i]);
+
+        printf("\nButtons: ");
+        for(i = 0; i < dev->btn_count; ++i)
+            printf("%ld ", dev->buttons[i]);
+
+        usleep(100000);
+    }
+}
