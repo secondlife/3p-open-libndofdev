@@ -14,7 +14,7 @@ PROJECT="libndofdev"
 #         * 0.3 
 # Tease out just the version number from that line.
 VERSION="$(expr "$(sed -n 2p "$TOP/$PROJECT/CHANGELOG")" : ".* \([0-9]*\.[0-9]*\) *$")"
-VERSION=$(gawk 'END{print MAJOR"."MINOR} /NDOFDEV_MAJOR/{MAJOR=$3} /NDOFDEV_MINOR/{MINOR=$3}' ${TOP}/${PROJECT}/include/ndofdev_version.h)
+VERSION=$(gawk 'END{print MAJOR"."MINOR} /NDOFDEV_MAJOR/{MAJOR=$3} /NDOFDEV_MINOR/{MINOR=$3}' ${TOP}/${PROJECT}/ndofdev_version.h)
 
 SOURCE_DIR="$PROJECT"
 
@@ -29,6 +29,11 @@ else
 fi
 
 stage="$(pwd)"
+
+if [ ! -d "$stage/include" ]
+then
+    mkdir -p "$stage/include"
+fi
 
 "$autobuild" source_environment > "$stage/variables_setup.sh" || exit 1
 . "$stage/variables_setup.sh"
@@ -54,10 +59,9 @@ case "$AUTOBUILD_PLATFORM" in
         opts="-DTARGET_OS_LINUX -m$AUTOBUILD_ADDRSIZE $LL_BUILD_RELEASE"
         cmake ../libndofdev -DCMAKE_CXX_FLAGS="$opts" -DCMAKE_C_FLAGS="$opts" \
             -DCMAKE_OSX_ARCHITECTURES="$AUTOBUILD_CONFIGURE_ARCH" \
-            -DWORD_SIZE:STRING=$AUTOBUILD_ADDRSIZE \
             -DCMAKE_BUILD_TYPE:STRING=Release
         make
-	cp -a ../libndofdev/include include
+	cp -a ../libndofdev/*.h $stage/include
 	cp -a ../libndofdev/LICENSES LICENSES
     ;;
 esac
