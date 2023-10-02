@@ -22,9 +22,9 @@
             <key>archive</key>
             <map>
               <key>hash</key>
-              <string>db1a758da143fe0177df2b472eaa8d78</string>
+              <string>6fae89d778ac2b2fece6014619a03cab</string>
               <key>url</key>
-              <string>http://3p.firestormviewer.org/SDL2-2.0.20-linux64-222610218.tar.bz2</string>
+              <string>http://3p.firestormviewer.org/SDL2-2.28.4-linux64-232750907.tar.bz2</string>
             </map>
             <key>name</key>
             <string>linux64</string>
