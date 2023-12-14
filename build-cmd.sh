@@ -52,6 +52,10 @@ case "$AUTOBUILD_PLATFORM" in
 		;;
     linux64)
         opts="-DTARGET_OS_LINUX -m$AUTOBUILD_ADDRSIZE $LL_BUILD_RELEASE"
+	#Dumb - $LL_BUILD_RELEASE contains c++ standard flags which are meaningful to the c++
+	#compiler only, SDL is written in C and polluting CFLAGS with that nonsense just makes
+	#the compiler spew out a whole load of noise, so lets strip that junk out from CFLAGS
+	opts=$(echo "$opts" | sed 's/-std=c++[0-9][0-9]*//')
         cmake ../libndofdev -DCMAKE_CXX_FLAGS="$opts" -DCMAKE_C_FLAGS="$opts" \
             -DCMAKE_OSX_ARCHITECTURES="$AUTOBUILD_CONFIGURE_ARCH" \
             -DCMAKE_BUILD_TYPE:STRING=Release
