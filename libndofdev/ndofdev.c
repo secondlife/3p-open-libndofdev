@@ -394,13 +394,14 @@ void ndof_update(NDOF_Device *in_dev)
         // update SpaceNavigator
 
         struct input_event ev;
+	int mapped_code;
 
         while(read(priv->fd, &ev, sizeof(struct input_event)) > 0)
         {
             switch (ev.type)
             {
                 case EV_KEY:
-                    int mapped_code = SPACE_MOUSE_BUTTON_MAPPING[ev.code & 0xff];
+                    mapped_code = SPACE_MOUSE_BUTTON_MAPPING[ev.code & 0xff];
                     // printf("Key %d (mapped to %d) pressed %d .\n", ev.code, mapped_code, ev.value);
                     priv->buttons[mapped_code] = ev.value;
                     break;
