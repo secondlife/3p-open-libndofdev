@@ -261,8 +261,24 @@ int ndof_init_first(NDOF_Device *in_out_dev, void *param)
 
     } else {
 #ifdef USE_SDL3
+        if(!SDL_HasJoystick())
+        {
+            return -1;
+        }
+
+        int count = 0;
+        SDL_JoystickID *ids = SDL_GetJoysticks(&count);
+        if(0 >= count)
+        {
+            return -1;
+        }
+
+        // Get ID of first device
+        SDL_JoystickID first_device = ids[0];
+        SDL_free(ids);
+
         // SpaceNavigator not found, use SDL Joystick
-        SDL_Joystick *j = SDL_OpenJoystick(0);
+        SDL_Joystick *j = SDL_OpenJoystick(first_device);
         if(j)
         {
             in_out_dev->axes_count = SDL_GetNumJoystickAxes(j) + SDL_GetNumJoystickHats(j) * 2; // each hat has 2 axes
